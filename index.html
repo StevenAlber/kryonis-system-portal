@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>KRYONIS PORTAL — Live Operations</title>
-  <meta name="description" content="KRYONIS OPERATIONS CONSOLE — Real-time coherence telemetry and node management." />
+  <meta name="description" content="KRYONIS OPERATIONS CONSOLE — Real-time coherence telemetry." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,24 +12,26 @@
 
   <style>
     :root {
-      /* THEME */
+      /* THEME COLORS */
       --bg: #010101;
-      --bg-panel: rgba(8, 8, 10, 0.75);
+      --bg-panel: rgba(10, 11, 14, 0.85); /* Slightly more opaque for better contrast */
+      
       --fg: #e1e1e6;
-      --fg-dim: #5c616b;
-      --fg-muted: #888;
+      --fg-dim: #6b7280;
+      --fg-muted: #9ca3af;
 
-      /* SIGNALS */
+      /* STATUS COLORS */
       --gold: #D4AF37;
-      --gold-dim: rgba(212, 175, 55, 0.2);
-      --alert: #ff3333;
-      --warn: #ffaa00;
-      --ok: #33ff88;
-      --tech: #6e8cff;
+      --gold-dim: rgba(212, 175, 55, 0.15);
+      --alert: #ef4444;
+      --warn: #f59e0b;
+      --ok: #10b981;
+      --tech: #3b82f6;
 
       --border: rgba(255, 255, 255, 0.08);
-      --border-active: rgba(212, 175, 55, 0.4);
-      --glass: blur(8px);
+      --border-active: rgba(212, 175, 55, 0.5);
+      
+      --glass: blur(12px);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,14 +42,15 @@
       color: var(--fg);
       font-size: 14px;
       line-height: 1.5;
-      overflow-x: hidden;
+      overflow-x: hidden; /* Prevent horizontal scroll */
       -webkit-font-smoothing: antialiased;
     }
 
     /* UTILS */
-    .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+    .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em; }
     .serif { font-family: 'Cinzel', serif; }
-    .caps { text-transform: uppercase; letter-spacing: 0.1em; }
+    .caps { text-transform: uppercase; letter-spacing: 0.08em; }
+    
     .text-gold { color: var(--gold); }
     .text-ok { color: var(--ok); }
     .text-warn { color: var(--warn); }
@@ -63,21 +66,21 @@
       z-index: 10;
     }
 
-    /* BG FX */
+    /* BACKGROUND FX */
     .noise {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 900; opacity: 0.06;
+      pointer-events: none; z-index: 900; opacity: 0.04;
       background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
     #radar-canvas {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: -1; opacity: 0.3;
+      z-index: -1; opacity: 0.25;
     }
 
     /* HEADER */
     header {
       position: fixed; top: 0; width: 100%; z-index: 100;
-      background: rgba(1,1,1,0.9); backdrop-filter: blur(12px);
+      background: rgba(1,1,1,0.95); backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       height: 70px; display: flex; align-items: center;
     }
@@ -86,28 +89,29 @@
       gap: 1rem;
     }
     
-    /* SIM CONTROLS */
     .sim-select {
-      background: #000; border: 1px solid var(--fg-dim); color: var(--gold);
-      font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 6px;
-      text-transform: uppercase; cursor: pointer; outline: none;
+      background: #050505; border: 1px solid var(--border); color: var(--gold);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px;
+      text-transform: uppercase; cursor: pointer; outline: none; border-radius: 4px;
+      transition: 0.2s;
     }
     .sim-select:hover { border-color: var(--gold); }
 
     .status-pill {
       font-size: 10px; border: 1px solid var(--ok); color: var(--ok);
-      padding: 2px 6px; border-radius: 2px; background: rgba(51, 255, 136, 0.1);
+      padding: 3px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.08);
+      font-weight: 600; letter-spacing: 0.05em;
       white-space: nowrap; transition: 0.3s;
     }
-    .status-pill.warn { border-color: var(--warn); color: var(--warn); background: rgba(255, 170, 0, 0.1); }
-    .status-pill.crit { border-color: var(--alert); color: var(--alert); background: rgba(255, 50, 50, 0.1); }
+    .status-pill.warn { border-color: var(--warn); color: var(--warn); background: rgba(245, 158, 11, 0.08); }
+    .status-pill.crit { border-color: var(--alert); color: var(--alert); background: rgba(239, 68, 68, 0.08); }
 
-    /* GRID */
+    /* LAYOUT GRID */
     main { padding-top: 90px; padding-bottom: 40px; }
     
     .dash-grid {
       display: grid;
-      grid-template-columns: 220px 1fr 320px;
+      grid-template-columns: 240px 1fr 340px;
       gap: 1.5rem;
       align-items: start;
     }
@@ -117,97 +121,161 @@
       background: var(--bg-panel);
       border: 1px solid var(--border);
       padding: 1.2rem;
-      backdrop-filter: var(--glass);
       position: relative;
       transition: border-color 0.3s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
-    /* HUD Corners */
+    
+    /* HUD Corners - Refined */
     .panel::before, .panel::after {
-      content: ''; position: absolute; width: 6px; height: 6px; transition: 0.3s;
-      border-color: var(--fg-dim); border-style: solid;
+      content: ''; position: absolute; width: 8px; height: 8px; transition: 0.3s;
+      border-color: rgba(255,255,255,0.15); border-style: solid; pointer-events: none;
     }
-    .panel::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-    .panel::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-    .panel:hover { border-color: var(--border-active); }
+    .panel::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
+    .panel::after { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+    .panel:hover { border-color: rgba(255,255,255,0.2); }
     .panel:hover::before, .panel:hover::after { border-color: var(--gold); }
 
     .panel-header {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
-      padding-bottom: 0.5rem;
+      margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 0.6rem;
     }
-    .p-title { font-size: 0.7rem; color: var(--gold); }
+    .p-title { font-size: 0.75rem; color: var(--gold); letter-spacing: 0.1em; font-weight: 600; }
 
     /* SIDE NAV */
     .side-nav a {
-      display: block; padding: 0.6rem 1rem;
+      display: block; padding: 0.7rem 1rem;
       border-left: 2px solid transparent;
       color: var(--fg-muted); font-size: 0.8rem;
       transition: 0.2s;
+      margin-bottom: 2px;
     }
     .side-nav a:hover, .side-nav a.active {
       border-left-color: var(--gold); color: var(--fg);
-      background: linear-gradient(90deg, rgba(212, 175, 55, 0.05), transparent);
+      background: linear-gradient(90deg, rgba(212, 175, 55, 0.08), transparent);
     }
 
     /* LIVE CHART */
     #gci-chart {
-      width: 100%; height: 120px;
-      border-bottom: 1px solid var(--border);
+      width: 100%; height: 140px;
       display: block;
+      margin-top: 1rem;
     }
 
-    /* LOGS */
+    /* =========================================
+       FIXED AUDIT LOG STYLES
+       ========================================= */
     .log-feed {
-      height: 220px; overflow-y: hidden;
-      font-size: 0.75rem; display: flex; flex-direction: column-reverse;
+      height: 240px; 
+      overflow-y: hidden; /* Prevents manual scroll, keeps it clean */
+      display: flex; 
+      flex-direction: column; /* Normal flow */
+      justify-content: flex-start; /* Items start from top */
+      position: relative;
     }
+    
+    /* The individual log entry */
     .log-line {
-      padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02);
-      animation: slideIn 0.2s ease-out;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      /* GRID LAYOUT for perfect alignment */
+      display: grid;
+      grid-template-columns: 70px 1fr; /* Fixed width for timestamp, rest for msg */
+      gap: 12px;
+      align-items: center;
+      
+      /* SPACING FIXES */
+      padding: 8px 4px;
+      min-height: 36px; /* Prevents crushing */
+      margin-bottom: 1px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      
+      /* FONT FIXES */
+      font-size: 12px; /* Readable specific pixel size */
+      line-height: 1.4;
+      
+      /* ANIMATION */
+      animation: slideIn 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      flex-shrink: 0; /* CRITICAL: Prevents flexbox squashing */
     }
-    .log-ts { color: var(--fg-dim); margin-right: 8px; font-family: 'JetBrains Mono'; }
-    .log-tag { display: inline-block; width: 60px; }
+
+    /* Zebra striping for better readability */
+    .log-line:nth-child(odd) { background: rgba(255,255,255,0.015); }
+
+    .log-ts { 
+      color: var(--fg-dim); 
+      font-family: 'JetBrains Mono'; 
+      font-size: 11px;
+      opacity: 0.8;
+    }
+    
+    .log-msg {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--fg);
+    }
 
     /* NODES */
     .node-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      padding: 0.9rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);
       transition: background 0.3s;
     }
+    .node-row:hover { background: rgba(255,255,255,0.02); }
     .node-status {
       width: 8px; height: 8px; background: var(--fg-dim); border-radius: 50%;
-      transition: 0.3s;
+      transition: 0.3s; box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
     .node-status.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
     .node-status.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
-    .node-status.crit { background: var(--alert); box-shadow: 0 0 8px var(--alert); animation: pulseCrit 1s infinite; }
+    .node-status.crit { background: var(--alert); box-shadow: 0 0 8px var(--alert); animation: pulseCrit 0.8s infinite; }
 
     /* ALERTS */
     .alert-box {
-      padding: 0.8rem; border: 1px solid rgba(255,50,50,0.3); 
-      background: rgba(255,50,50,0.05); margin-bottom: 0.5rem;
-      display: none; /* Hidden by default */
+      padding: 1rem; border: 1px solid rgba(239, 68, 68, 0.3); 
+      background: rgba(239, 68, 68, 0.08); margin-bottom: 1rem;
+      display: none; border-left: 3px solid var(--alert);
       animation: flashAlert 0.5s;
     }
     .alert-box.active { display: block; }
 
     /* ANIMATIONS */
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulseCrit { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-    @keyframes flashAlert { 0% { background: rgba(255,50,50,0.4); } 100% { background: rgba(255,50,50,0.05); } }
+    @keyframes flashAlert { 0% { background: rgba(239, 68, 68, 0.2); } 100% { background: rgba(239, 68, 68, 0.08); } }
 
     /* MOBILE */
     @media (max-width: 1024px) {
-      .dash-grid { grid-template-columns: 1fr; }
-      .side-nav { display: flex; overflow-x: auto; margin-bottom: 1rem; gap: 1rem; }
-      .side-nav a { border-left: none; border-bottom: 2px solid transparent; }
-      .side-nav a:hover { border-left: none; border-bottom-color: var(--gold); }
-      header { height: auto; padding: 10px 0; }
+      .dash-grid { grid-template-columns: 1fr; gap: 1rem; }
+      
+      .side-nav { 
+        display: flex; overflow-x: auto; margin-bottom: 0.5rem; gap: 0.5rem; 
+        padding-bottom: 0.5rem;
+        scrollbar-width: none; /* Hide scrollbar Firefox */
+      }
+      .side-nav::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome */ }
+      
+      .side-nav a { 
+        border: 1px solid var(--border); border-radius: 4px; 
+        padding: 0.5rem 1rem; background: rgba(255,255,255,0.02);
+        white-space: nowrap;
+      }
+      .side-nav a.active { border-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
+      
+      header { height: auto; padding: 12px 0; }
       .top-bar { flex-wrap: wrap; }
-      .clock-area { width: 100%; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.5rem; }
+      
+      /* Mobile Clock Area Adjustment */
+      .clock-area { 
+        width: 100%; justify-content: space-between; 
+        border-top: 1px solid rgba(255,255,255,0.08); 
+        padding-top: 0.8rem; margin-top: 0.6rem; 
+      }
+      
+      /* Log adjustments for mobile */
+      .log-feed { height: 200px; }
+      .log-line { font-size: 11px; padding: 8px 0; }
     }
   </style>
 </head>
@@ -219,10 +287,10 @@
   <header>
     <div class="wrapper top-bar">
       <div style="display:flex; align-items:center; gap:1rem;">
-        <div class="text-gold serif" style="font-size:1.2rem;">⦿</div>
+        <div class="text-gold serif" style="font-size:1.4rem;">⦿</div>
         <div>
-          <div class="serif caps" style="line-height:1;">Kryonis Portal</div>
-          <div class="mono caps text-dim" style="font-size:0.65rem;">Sovereign Operations</div>
+          <div class="serif caps" style="line-height:1.1; font-size:1rem;">Kryonis Portal</div>
+          <div class="mono caps text-dim" style="font-size:0.65rem; letter-spacing:0.05em;">Sovereign Operations Console</div>
         </div>
       </div>
       
@@ -232,7 +300,7 @@
           <option value="2">MODE: STD</option>
           <option value="3" selected>MODE: ULTRA</option>
         </select>
-        <div id="clock" style="min-width:80px; text-align:right;">00:00:00</div>
+        <div id="clock" style="min-width:70px; text-align:right; color:var(--fg);">00:00:00</div>
         <div id="sys-status" class="status-pill">SYSTEM NOMINAL</div>
       </div>
     </div>
@@ -242,13 +310,13 @@
     <div class="dash-grid">
       
       <nav class="panel side-nav mono caps">
-        <div class="p-title mb-2 text-dim" style="padding:0 1rem;">MODULES</div>
+        <div class="p-title mb-2 text-dim" style="padding:0 0.5rem 0.5rem 0.5rem; display:block;">MODULES</div>
         <a href="#" class="active">Overview</a>
         <a href="#">K-Pulse Telemetry</a>
         <a href="#">Node Lattice</a>
         <a href="#">PoC Analytics</a>
         <a href="#">Lethe Protocol</a>
-        <a href="https://kryonis.global" target="_blank" style="color:var(--gold); margin-top:1rem;">Global Site ↗</a>
+        <a href="https://kryonis.global" target="_blank" style="color:var(--gold); margin-top:0.5rem; border-color:rgba(212,175,55,0.2);">Global Site ↗</a>
       </nav>
 
       <div style="display:flex; flex-direction:column; gap:1.5rem;">
@@ -256,26 +324,24 @@
         <div class="panel">
           <div class="panel-header mono caps">
             <span class="p-title">Global Coherence Index (GCI)</span>
-            <span class="text-tech" id="live-indicator">LIVE</span>
+            <span class="text-tech" id="live-indicator" style="font-size:10px; animation:blink 2s infinite;">● LIVE</span>
           </div>
           <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; text-align:center;">
             <div>
-              <div id="val-gci" class="metric-big serif text-gold">98.40</div>
+              <div id="val-gci" class="metric-big serif text-gold" style="font-size:2.2rem;">98.40</div>
               <div class="metric-label mono caps">Signal Integrity</div>
             </div>
             <div>
-              <div id="val-nodes" class="metric-big serif">7</div>
+              <div id="val-nodes" class="metric-big serif" style="font-size:2.2rem;">7</div>
               <div class="metric-label mono caps">Active Nodes</div>
             </div>
             <div>
-              <div id="val-lat" class="metric-big serif text-ok">0.02s</div>
+              <div id="val-lat" class="metric-big serif text-ok" style="font-size:2.2rem;">0.02s</div>
               <div class="metric-label mono caps">Sync Latency</div>
             </div>
           </div>
           
-          <div style="margin-top:1.5rem; position:relative;">
-            <canvas id="gci-chart"></canvas>
-          </div>
+          <canvas id="gci-chart"></canvas>
         </div>
 
         <div class="panel">
@@ -295,7 +361,7 @@
              <span class="p-title">System Alerts</span>
           </div>
           <div id="alert-container">
-             <div class="text-dim" style="font-size:0.8rem; padding:0.5rem;">No active alerts.</div>
+             <div class="text-dim" style="font-size:0.8rem; padding:0.5rem; font-style:italic;">No active alerts.</div>
           </div>
         </div>
 
@@ -304,7 +370,8 @@
              <span class="p-title">Audit Stream</span>
              <span class="text-dim" style="font-size:0.7rem;">CH: 224-ENC</span>
           </div>
-          <div class="log-feed mono" id="log-container"></div>
+          <div class="log-feed" id="log-container">
+             </div>
         </div>
 
       </div>
@@ -314,25 +381,25 @@
 
   <script>
     /* =========================================
-       SIM-ENGINE v1.0: THE BRAIN
+       SIM-ENGINE v2.2: OPTIMIZED & STABILIZED
        ========================================= */
     
     const STATE = {
-      mode: 3, // 1=Light, 2=Std, 3=Ultra
+      mode: 3, 
       gci: 98.40,
       latency: 0.02,
       nodes: [
-        { name: "ARCTICA-01 (Bio)", status: "ok", val: 99 },
-        { name: "ORBITAL (Sim)", status: "ok", val: 97 },
-        { name: "PACIFIC-RIM (Gov)", status: "warn", val: 89 },
-        { name: "URBAN-CORE (Cog)", status: "ok", val: 95 },
-        { name: "DEEP-RURAL (Eco)", status: "ok", val: 98 }
+        { name: "ARCTICA-01 (Bio)", status: "ok" },
+        { name: "ORBITAL (Sim)", status: "ok" },
+        { name: "PACIFIC-RIM (Gov)", status: "warn" },
+        { name: "URBAN-CORE (Cog)", status: "ok" },
+        { name: "DEEP-RURAL (Eco)", status: "ok" }
       ],
-      history: [], // For Chart
-      alerts: []
+      history: [],
+      logCount: 0
     };
 
-    // --- DOM ELEMENTS ---
+    // DOM
     const els = {
       gci: document.getElementById('val-gci'),
       lat: document.getElementById('val-lat'),
@@ -343,77 +410,47 @@
       simSel: document.getElementById('sim-level')
     };
 
-    // --- INITIALIZERS ---
-    // Fill chart history with baseline
-    for(let i=0; i<50; i++) STATE.history.push(98.0 + Math.random());
+    // INIT
+    for(let i=0; i<100; i++) STATE.history.push(98.0 + Math.random());
 
-    // Listen for Mode Change
     els.simSel.addEventListener('change', (e) => {
       STATE.mode = parseInt(e.target.value);
       addLog("SYSTEM", `Simulation Mode switched to LEVEL ${STATE.mode}`);
-      renderNodes(); // reset visuals
     });
 
-    // --- LOGIC: UPDATE STATE ---
+    // LOGIC
     function updateSimulation() {
-      if (STATE.mode === 1) return; // Light mode is static
+      if (STATE.mode === 1) return;
 
-      // 1. Drift GCI
-      const volatility = STATE.mode === 3 ? 0.15 : 0.05;
+      // GCI Logic
+      const volatility = STATE.mode === 3 ? 0.12 : 0.04;
       let change = (Math.random() - 0.5) * volatility;
       STATE.gci = Math.max(85, Math.min(100, STATE.gci + change));
       
-      // 2. Correlate Latency (Lower GCI = Higher Latency)
-      if (STATE.gci < 95) STATE.latency += 0.001;
-      else STATE.latency = Math.max(0.01, STATE.latency - 0.001);
+      // Latency Logic
+      if (STATE.gci < 95) STATE.latency += 0.002;
+      else STATE.latency = Math.max(0.01, STATE.latency - 0.002);
 
-      // 3. Chart History
       STATE.history.push(STATE.gci);
-      if(STATE.history.length > 100) STATE.history.shift();
+      if(STATE.history.length > 150) STATE.history.shift();
 
-      // 4. Node Chaos (Ultra Only)
-      if (STATE.mode === 3 && Math.random() > 0.92) {
-        const node = STATE.nodes[Math.floor(Math.random() * STATE.nodes.length)];
-        
-        // Randomly degrade or fix
-        if (node.status === 'ok' && Math.random() > 0.7) {
-          node.status = 'warn';
-          addLog("WARN", `${node.name} decoherence detected.`);
-        } else if (node.status === 'warn') {
-          if (Math.random() > 0.5) {
-            node.status = 'ok';
-            addLog("SYS", `${node.name} restabilized.`);
-          } else if (Math.random() > 0.8) {
-            node.status = 'crit';
-            addLog("CRIT", `${node.name} CRITICAL FAILURE.`);
-            triggerAlert(`${node.name} OFFLINE`);
-          }
-        } else if (node.status === 'crit') {
-           node.status = 'warn'; // Recovery
-           addLog("SYS", `${node.name} rebooting sequence...`);
-        }
-        renderNodes();
-      }
-
-      // 5. System Status Logic
-      updateSystemStatus();
-
-      // 6. Render Text
+      // Text Render
       els.gci.innerText = STATE.gci.toFixed(2);
       els.lat.innerText = STATE.latency.toFixed(3) + "s";
       
-      // Colorize GCI
-      els.gci.className = `metric-big serif ${STATE.gci > 95 ? 'text-gold' : (STATE.gci > 90 ? 'text-warn' : 'text-alert')}`;
-    }
+      // Colorize
+      if(STATE.gci > 96) els.gci.className = "metric-big serif text-gold";
+      else if(STATE.gci > 90) els.gci.className = "metric-big serif text-warn";
+      else els.gci.className = "metric-big serif text-alert";
 
-    function updateSystemStatus() {
-      const critCount = STATE.nodes.filter(n => n.status === 'crit').length;
-      const warnCount = STATE.nodes.filter(n => n.status === 'warn').length;
+      // System Status
+      const crit = STATE.nodes.some(n => n.status === 'crit');
+      const warn = STATE.nodes.some(n => n.status === 'warn');
 
-      if (critCount > 0) {
+      if (crit) {
         els.sysStatus.innerText = "SYSTEM UNSTABLE";
         els.sysStatus.className = "status-pill crit";
-      } else if (warnCount > 0 || STATE.gci < 94) {
+      } else if (warn || STATE.gci < 94) {
         els.sysStatus.innerText = "COHERENCE DRIFT";
         els.sysStatus.className = "status-pill warn";
       } else {
@@ -422,145 +459,150 @@
       }
     }
 
-    function triggerAlert(msg) {
-      const div = document.createElement('div');
-      div.className = 'alert-box active';
-      div.innerHTML = `<strong class="text-alert">! ANOMALY</strong><br><span class="text-dim">${msg}</span>`;
-      els.alerts.innerHTML = ''; // Clear old (simple mode)
-      els.alerts.appendChild(div);
-      
-      // Auto clear after 4s
-      setTimeout(() => {
-        if(els.alerts.contains(div)) div.remove();
-        if(els.alerts.children.length === 0) els.alerts.innerHTML = '<div class="text-dim" style="font-size:0.8rem; padding:0.5rem;">No active alerts.</div>';
-      }, 4000);
-    }
-
-    // --- RENDERERS ---
-
+    // NODES RENDER
     function renderNodes() {
       els.nodeList.innerHTML = '';
       STATE.nodes.forEach(n => {
         const row = document.createElement('div');
         row.className = 'node-row';
         
-        let dotClass = 'ok';
-        if(n.status === 'warn') dotClass = 'warn';
-        if(n.status === 'crit') dotClass = 'crit';
+        // Visual status check
+        if(STATE.mode === 3 && Math.random() > 0.98) {
+           // Random flicker logic would go here
+        }
 
-        row.innerHTML = `<span>${n.name}</span><span class="node-status ${dotClass}"></span>`;
+        row.innerHTML = `<span>${n.name}</span><span class="node-status ${n.status}"></span>`;
         els.nodeList.appendChild(row);
       });
     }
 
-    // Charting with Canvas
-    const chartCanvas = document.getElementById('gci-chart');
-    const chartCtx = chartCanvas.getContext('2d');
-    
-    function resizeChart() {
-      chartCanvas.width = chartCanvas.offsetWidth;
-      chartCanvas.height = chartCanvas.offsetHeight;
-    }
-    window.addEventListener('resize', resizeChart);
-    resizeChart();
+    // LOGIC: RANDOM EVENTS (ULTRA MODE)
+    setInterval(() => {
+      if(STATE.mode !== 3) return;
 
-    function drawChart() {
-      const w = chartCanvas.width;
-      const h = chartCanvas.height;
-      chartCtx.clearRect(0, 0, w, h);
+      if(Math.random() > 0.8) {
+        const node = STATE.nodes[Math.floor(Math.random() * STATE.nodes.length)];
+        const actions = ['ok', 'warn', 'crit'];
+        // Weighted random
+        const outcome = Math.random() > 0.8 ? 'warn' : (Math.random() > 0.95 ? 'crit' : 'ok');
+        
+        if(node.status !== outcome) {
+           node.status = outcome;
+           renderNodes();
+           if(outcome === 'crit') {
+             triggerAlert(`${node.name} CRITICAL FAILURE`);
+             addLog("CRIT", `${node.name} offline.`);
+           } else if(outcome === 'warn') {
+             addLog("WARN", `${node.name} destabilized.`);
+           } else {
+             addLog("SYS", `${node.name} stabilized.`);
+           }
+        }
+      }
+    }, 2000);
 
-      // Grid lines
-      chartCtx.strokeStyle = 'rgba(255,255,255,0.05)';
-      chartCtx.beginPath();
-      chartCtx.moveTo(0, h/2); chartCtx.lineTo(w, h/2);
-      chartCtx.stroke();
-
-      // Data Line
-      chartCtx.beginPath();
-      const step = w / (STATE.history.length - 1);
-      
-      STATE.history.forEach((val, i) => {
-        // Map 90-100 to height
-        const y = h - ((val - 90) / 10) * h; 
-        if(i===0) chartCtx.moveTo(0, y);
-        else chartCtx.lineTo(i * step, y);
-      });
-
-      chartCtx.strokeStyle = '#D4AF37';
-      chartCtx.lineWidth = 2;
-      chartCtx.stroke();
-      
-      // Fill
-      chartCtx.lineTo(w, h);
-      chartCtx.lineTo(0, h);
-      const grad = chartCtx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(212, 175, 55, 0.2)');
-      grad.addColorStop(1, 'rgba(212, 175, 55, 0)');
-      chartCtx.fillStyle = grad;
-      chartCtx.fill();
+    function triggerAlert(msg) {
+      els.alerts.innerHTML = `<div class="alert-box active"><strong class="text-alert mono">! ALERT</strong><div class="text-dim" style="margin-top:4px;">${msg}</div></div>`;
+      setTimeout(() => {
+         els.alerts.innerHTML = '<div class="text-dim" style="font-size:0.8rem; padding:0.5rem; font-style:italic;">No active alerts.</div>';
+      }, 5000);
     }
 
-    // --- LOG GENERATOR ---
-    const logTemplates = [
-      { tag: "TEL", msg: "Telemetry packet verified." },
-      { tag: "POC", msg: "Coherence check: VALID." },
-      { tag: "NET", msg: "Latency nominal." },
-      { tag: "AI",  msg: "Predictive model updated." },
-      { tag: "GOV", msg: "Protocol consensus reached." }
+    // LOGGING SYSTEM (FIXED)
+    const logTags = ["TEL", "POC", "NET", "AI", "GOV", "BIO"];
+    const logMsgs = [
+      "Telemetry packet verified", "Coherence check valid", "Latency nominal", 
+      "Predictive model updated", "Protocol consensus reached", "Biometric sync OK",
+      "Indexing archives...", "Handshake maintained", "Resonance detected"
     ];
 
-    function logLoop() {
-      // Frequency depends on mode
-      const delay = STATE.mode === 3 ? Math.random() * 1500 + 500 : Math.random() * 4000 + 2000;
+    function addLog(tag, msg) {
+      const now = new Date();
+      const time = now.toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
       
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      
+      let color = 'text-tech';
+      if(tag === 'WARN') color = 'text-warn';
+      if(tag === 'CRIT' || tag === 'ALERT') color = 'text-alert';
+      if(tag === 'SYS') color = 'text-gold';
+
+      // Grid layout structure
+      div.innerHTML = `
+        <div class="log-ts">${time}</div>
+        <div class="log-msg"><span class="${color} mono" style="margin-right:6px;">${tag}</span>${msg}</div>
+      `;
+      
+      els.log.prepend(div);
+      
+      // Keep only 7 items to prevent overcrowding/overlapping
+      if(els.log.children.length > 7) {
+        els.log.removeChild(els.log.lastChild);
+      }
+    }
+
+    function logLoop() {
+      const delay = STATE.mode === 3 ? Math.random() * 1500 + 800 : Math.random() * 4000 + 2000;
       setTimeout(() => {
-        // If Ultra mode, chance for "intelligent" logs
-        if (STATE.mode === 3 && Math.random() > 0.7) {
-           // Log derived from state
-           addLog("GCI", `Index fluctuation: ${STATE.gci.toFixed(2)}`);
-        } else {
-           // Generic log
-           const t = logTemplates[Math.floor(Math.random() * logTemplates.length)];
-           addLog(t.tag, t.msg);
-        }
+        const tag = logTags[Math.floor(Math.random() * logTags.length)];
+        const msg = logMsgs[Math.floor(Math.random() * logMsgs.length)];
+        addLog(tag, msg);
         logLoop();
       }, delay);
     }
 
-    function addLog(tag, msg) {
-      const time = new Date().toISOString().split('T')[1].split('.')[0];
-      const div = document.createElement('div');
-      div.className = 'log-line';
-      
-      let colorClass = 'text-tech';
-      if (tag === 'WARN') colorClass = 'text-warn';
-      if (tag === 'CRIT') colorClass = 'text-alert';
-
-      div.innerHTML = `<span class="log-ts">[${time}]</span><span class="log-tag ${colorClass}">${tag}</span> ${msg}`;
-      els.log.prepend(div);
-      if(els.log.children.length > 15) els.log.removeChild(els.log.lastChild);
-    }
-
-
-    // --- MAIN LOOPS ---
-    renderNodes(); // Initial
-    logLoop();     // Start Logger
-
-    // High Speed Loop (Animation)
+    // ANIMATION LOOP
     function loop() {
       updateSimulation();
       drawChart();
       requestAnimationFrame(loop);
     }
-    loop();
 
-    // Clock
-    setInterval(() => {
-      document.getElementById('clock').innerText = new Date().toISOString().split('T')[1].split('.')[0] + " UTC";
-    }, 1000);
+    // CHART RENDER
+    const canvas = document.getElementById('gci-chart');
+    const ctx = canvas.getContext('2d');
+    
+    function resizeChart() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resizeChart);
+    resizeChart();
 
+    function drawChart() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      
+      // Guidelines
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath(); ctx.moveTo(0, h*0.3); ctx.lineTo(w, h*0.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, h*0.7); ctx.lineTo(w, h*0.7); ctx.stroke();
 
-    // --- RADAR BACKGROUND (Visual Only) ---
+      // Path
+      ctx.beginPath();
+      const step = w / (STATE.history.length - 1);
+      STATE.history.forEach((val, i) => {
+        const y = h - ((val - 88) / 12) * h; // Scale 88-100 to canvas
+        if(i===0) ctx.moveTo(0, y);
+        else ctx.lineTo(i * step, y);
+      });
+      
+      ctx.strokeStyle = STATE.gci > 95 ? '#D4AF37' : (STATE.gci > 90 ? '#f59e0b' : '#ef4444');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Gradient Fill
+      ctx.lineTo(w, h); ctx.lineTo(0, h);
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, STATE.gci > 95 ? 'rgba(212, 175, 55, 0.2)' : 'rgba(245, 158, 11, 0.2)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // RADAR BG
     const rCanvas = document.getElementById('radar-canvas');
     const rCtx = rCanvas.getContext('2d');
     let rW, rH, scanY = 0;
@@ -569,14 +611,24 @@
 
     function animRadar() {
       rCtx.clearRect(0, 0, rW, rH);
-      if(STATE.mode > 1) { // Only animate in STD/ULTRA
-        scanY += 2; 
-        if(scanY > rH) scanY = 0;
+      if(STATE.mode > 1) {
+        scanY += 1.5; if(scanY > rH) scanY = 0;
         rCtx.beginPath(); rCtx.moveTo(0, scanY); rCtx.lineTo(rW, scanY);
-        rCtx.strokeStyle = "rgba(212, 175, 55, 0.1)"; rCtx.stroke();
+        rCtx.strokeStyle = "rgba(212, 175, 55, 0.15)"; rCtx.lineWidth=1; rCtx.stroke();
       }
       requestAnimationFrame(animRadar);
     }
+
+    // CLOCK
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').innerText = now.toISOString().split('T')[1].split('.')[0];
+    }, 1000);
+
+    // START
+    renderNodes();
+    logLoop();
+    loop();
     animRadar();
 
   </script>
