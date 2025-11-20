@@ -14,7 +14,7 @@
     :root {
       /* THEME COLORS */
       --bg: #010101;
-      --bg-panel: rgba(10, 11, 14, 0.85); /* Slightly more opaque for better contrast */
+      --bg-panel: rgba(10, 11, 14, 0.85);
       
       --fg: #e1e1e6;
       --fg-dim: #6b7280;
@@ -42,7 +42,7 @@
       color: var(--fg);
       font-size: 14px;
       line-height: 1.5;
-      overflow-x: hidden; /* Prevent horizontal scroll */
+      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -58,8 +58,10 @@
     .text-tech { color: var(--tech); }
     .text-dim { color: var(--fg-dim); }
     
+    /* === LAYOUT TUNING === */
     .wrapper {
-      max-width: 1400px;
+      /* Reduced max-width for tighter "Cockpit" feel */
+      max-width: 1160px; 
       margin: 0 auto;
       padding: 0 1.5rem;
       position: relative;
@@ -80,7 +82,7 @@
     /* HEADER */
     header {
       position: fixed; top: 0; width: 100%; z-index: 100;
-      background: rgba(1,1,1,0.95); backdrop-filter: blur(16px);
+      background: rgba(1,1,1,0.9); backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       height: 70px; display: flex; align-items: center;
     }
@@ -106,12 +108,37 @@
     .status-pill.warn { border-color: var(--warn); color: var(--warn); background: rgba(245, 158, 11, 0.08); }
     .status-pill.crit { border-color: var(--alert); color: var(--alert); background: rgba(239, 68, 68, 0.08); }
 
-    /* LAYOUT GRID */
-    main { padding-top: 90px; padding-bottom: 40px; }
+    /* === MAIN SPACING & COMPOSITION === */
+    main { 
+      /* Increased top padding for "Air" */
+      padding-top: 130px; 
+      padding-bottom: 60px; 
+      min-height: 100vh;
+      display: flex; 
+      flex-direction: column;
+    }
+
+    /* THE NEW SUB-HEADER (OPS BAR) */
+    .ops-bar {
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+    .ops-title {
+      font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--fg-muted);
+      letter-spacing: 0.15em;
+    }
+    .ops-coord {
+      font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--fg-dim);
+    }
     
     .dash-grid {
       display: grid;
-      grid-template-columns: 240px 1fr 340px;
+      /* Tighter left column for nav */
+      grid-template-columns: 200px 1fr 320px;
       gap: 1.5rem;
       align-items: start;
     }
@@ -123,10 +150,9 @@
       padding: 1.2rem;
       position: relative;
       transition: border-color 0.3s;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.5); /* Stronger shadow for depth */
     }
     
-    /* HUD Corners - Refined */
     .panel::before, .panel::after {
       content: ''; position: absolute; width: 8px; height: 8px; transition: 0.3s;
       border-color: rgba(255,255,255,0.15); border-style: solid; pointer-events: none;
@@ -163,57 +189,27 @@
       margin-top: 1rem;
     }
 
-    /* =========================================
-       FIXED AUDIT LOG STYLES
-       ========================================= */
+    /* LOG FEED - FIXED LAYOUT */
     .log-feed {
       height: 240px; 
-      overflow-y: hidden; /* Prevents manual scroll, keeps it clean */
-      display: flex; 
-      flex-direction: column; /* Normal flow */
-      justify-content: flex-start; /* Items start from top */
+      overflow-y: hidden; 
+      display: flex; flex-direction: column; justify-content: flex-start;
       position: relative;
     }
     
-    /* The individual log entry */
     .log-line {
-      /* GRID LAYOUT for perfect alignment */
       display: grid;
-      grid-template-columns: 70px 1fr; /* Fixed width for timestamp, rest for msg */
-      gap: 12px;
-      align-items: center;
-      
-      /* SPACING FIXES */
-      padding: 8px 4px;
-      min-height: 36px; /* Prevents crushing */
-      margin-bottom: 1px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      
-      /* FONT FIXES */
-      font-size: 12px; /* Readable specific pixel size */
-      line-height: 1.4;
-      
-      /* ANIMATION */
+      grid-template-columns: 70px 1fr; 
+      gap: 12px; align-items: center;
+      padding: 8px 4px; min-height: 36px;
+      margin-bottom: 1px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px; line-height: 1.4;
       animation: slideIn 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-      flex-shrink: 0; /* CRITICAL: Prevents flexbox squashing */
+      flex-shrink: 0;
     }
-
-    /* Zebra striping for better readability */
     .log-line:nth-child(odd) { background: rgba(255,255,255,0.015); }
-
-    .log-ts { 
-      color: var(--fg-dim); 
-      font-family: 'JetBrains Mono'; 
-      font-size: 11px;
-      opacity: 0.8;
-    }
-    
-    .log-msg {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--fg);
-    }
+    .log-ts { color: var(--fg-dim); font-family: 'JetBrains Mono'; font-size: 11px; opacity: 0.8; }
+    .log-msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
 
     /* NODES */
     .node-row {
@@ -245,37 +241,30 @@
     @keyframes pulseCrit { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     @keyframes flashAlert { 0% { background: rgba(239, 68, 68, 0.2); } 100% { background: rgba(239, 68, 68, 0.08); } }
 
-    /* MOBILE */
+    /* MOBILE OPTIMIZATIONS */
     @media (max-width: 1024px) {
-      .dash-grid { grid-template-columns: 1fr; gap: 1rem; }
+      main { padding-top: 110px; } /* Slightly less top pad on mobile but still airy */
+      .dash-grid { grid-template-columns: 1fr; gap: 1.5rem; }
       
       .side-nav { 
         display: flex; overflow-x: auto; margin-bottom: 0.5rem; gap: 0.5rem; 
-        padding-bottom: 0.5rem;
-        scrollbar-width: none; /* Hide scrollbar Firefox */
+        padding-bottom: 0.5rem; scrollbar-width: none;
       }
-      .side-nav::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome */ }
+      .side-nav::-webkit-scrollbar { display: none; }
       
       .side-nav a { 
         border: 1px solid var(--border); border-radius: 4px; 
-        padding: 0.5rem 1rem; background: rgba(255,255,255,0.02);
+        padding: 0.6rem 1rem; background: rgba(255,255,255,0.02);
         white-space: nowrap;
       }
       .side-nav a.active { border-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
       
       header { height: auto; padding: 12px 0; }
       .top-bar { flex-wrap: wrap; }
+      .clock-area { width: 100%; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.8rem; margin-top: 0.6rem; }
       
-      /* Mobile Clock Area Adjustment */
-      .clock-area { 
-        width: 100%; justify-content: space-between; 
-        border-top: 1px solid rgba(255,255,255,0.08); 
-        padding-top: 0.8rem; margin-top: 0.6rem; 
-      }
-      
-      /* Log adjustments for mobile */
-      .log-feed { height: 200px; }
-      .log-line { font-size: 11px; padding: 8px 0; }
+      .ops-bar { margin-bottom: 1rem; align-items: center; }
+      .ops-coord { display: none; } /* Hide coords on mobile */
     }
   </style>
 </head>
@@ -307,6 +296,12 @@
   </header>
 
   <main class="wrapper">
+    
+    <div class="ops-bar">
+      <div class="ops-title">// LIVE TELEMETRY STREAM</div>
+      <div class="ops-coord">GRID: 22.4N / 114.1E</div>
+    </div>
+
     <div class="dash-grid">
       
       <nav class="panel side-nav mono caps">
@@ -381,7 +376,7 @@
 
   <script>
     /* =========================================
-       SIM-ENGINE v2.2: OPTIMIZED & STABILIZED
+       SIM-ENGINE v2.3: FINAL STABLE BUILD
        ========================================= */
     
     const STATE = {
@@ -465,12 +460,6 @@
       STATE.nodes.forEach(n => {
         const row = document.createElement('div');
         row.className = 'node-row';
-        
-        // Visual status check
-        if(STATE.mode === 3 && Math.random() > 0.98) {
-           // Random flicker logic would go here
-        }
-
         row.innerHTML = `<span>${n.name}</span><span class="node-status ${n.status}"></span>`;
         els.nodeList.appendChild(row);
       });
@@ -482,8 +471,6 @@
 
       if(Math.random() > 0.8) {
         const node = STATE.nodes[Math.floor(Math.random() * STATE.nodes.length)];
-        const actions = ['ok', 'warn', 'crit'];
-        // Weighted random
         const outcome = Math.random() > 0.8 ? 'warn' : (Math.random() > 0.95 ? 'crit' : 'ok');
         
         if(node.status !== outcome) {
@@ -508,7 +495,7 @@
       }, 5000);
     }
 
-    // LOGGING SYSTEM (FIXED)
+    // LOGGING SYSTEM
     const logTags = ["TEL", "POC", "NET", "AI", "GOV", "BIO"];
     const logMsgs = [
       "Telemetry packet verified", "Coherence check valid", "Latency nominal", 
@@ -518,7 +505,7 @@
 
     function addLog(tag, msg) {
       const now = new Date();
-      const time = now.toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+      const time = now.toISOString().split('T')[1].split('.')[0];
       
       const div = document.createElement('div');
       div.className = 'log-line';
@@ -528,7 +515,6 @@
       if(tag === 'CRIT' || tag === 'ALERT') color = 'text-alert';
       if(tag === 'SYS') color = 'text-gold';
 
-      // Grid layout structure
       div.innerHTML = `
         <div class="log-ts">${time}</div>
         <div class="log-msg"><span class="${color} mono" style="margin-right:6px;">${tag}</span>${msg}</div>
@@ -536,7 +522,6 @@
       
       els.log.prepend(div);
       
-      // Keep only 7 items to prevent overcrowding/overlapping
       if(els.log.children.length > 7) {
         els.log.removeChild(els.log.lastChild);
       }
@@ -584,7 +569,7 @@
       ctx.beginPath();
       const step = w / (STATE.history.length - 1);
       STATE.history.forEach((val, i) => {
-        const y = h - ((val - 88) / 12) * h; // Scale 88-100 to canvas
+        const y = h - ((val - 88) / 12) * h; 
         if(i===0) ctx.moveTo(0, y);
         else ctx.lineTo(i * step, y);
       });
