@@ -295,3 +295,317 @@
         <a href="#">K-Pulse Telemetry</a>
         <a href="#">Node Lattice</a>
         <a href="#">PoC Analytics</a>
+        <a href="#">Lethe Protocol</a>
+        <a href="https://kryonis.global" target="_blank" style="color:var(--gold); margin-top:0.5rem; border-color:rgba(212,175,55,0.2);">Global Site ↗</a>
+      </nav>
+
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+        
+        <div class="panel">
+          <div class="panel-header mono caps">
+            <span class="p-title">Global Coherence Index (GCI)</span>
+            <span class="text-tech" id="live-indicator" style="font-size:10px; animation:blink 2s infinite;">● LIVE</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; text-align:center;">
+            <div>
+              <div id="val-gci" class="metric-big serif text-gold" style="font-size:2.2rem;">98.40</div>
+              <div class="metric-label mono caps">Signal Integrity</div>
+            </div>
+            <div>
+              <div id="val-nodes" class="metric-big serif" style="font-size:2.2rem;">7</div>
+              <div class="metric-label mono caps">Active Nodes</div>
+            </div>
+            <div>
+              <div id="val-lat" class="metric-big serif text-ok" style="font-size:2.2rem;">0.02s</div>
+              <div class="metric-label mono caps">Sync Latency</div>
+            </div>
+          </div>
+          <canvas id="gci-chart"></canvas>
+        </div>
+
+        <div class="panel">
+           <div class="panel-header mono caps">
+             <span class="p-title">Node Lattice Status</span>
+           </div>
+           <div class="mono" style="font-size:0.85rem;" id="node-list"></div>
+        </div>
+
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+        
+        <div class="panel" id="alert-panel" style="min-height:100px;">
+          <div class="panel-header mono caps">
+             <span class="p-title actionable" onclick="manualAlertTrigger()" title="Click to test Alert">System Alerts</span>
+          </div>
+          <div id="alert-container">
+             <div class="text-dim" style="font-size:0.8rem; padding:0.5rem; font-style:italic;">No active alerts.</div>
+          </div>
+        </div>
+
+        <div class="panel" style="flex-grow:1;">
+          <div class="panel-header mono caps">
+             <span class="p-title">Audit Stream</span>
+             <span class="text-dim" style="font-size:0.7rem;">CH: 224-ENC</span>
+          </div>
+          <div class="log-feed" id="log-container"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    /* =========================================
+       SIM-ENGINE v2.4: HIGH VOLATILITY EDITION
+       ========================================= */
+    
+    const STATE = {
+      mode: 3, 
+      gci: 98.40,
+      latency: 0.02,
+      nodes: [
+        { name: "ARCTICA-01 (Bio)", status: "ok" },
+        { name: "ORBITAL (Sim)", status: "ok" },
+        { name: "PACIFIC-RIM (Gov)", status: "warn" },
+        { name: "URBAN-CORE (Cog)", status: "ok" },
+        { name: "DEEP-RURAL (Eco)", status: "ok" }
+      ],
+      history: [],
+      logCount: 0
+    };
+
+    // DOM
+    const els = {
+      gci: document.getElementById('val-gci'),
+      lat: document.getElementById('val-lat'),
+      nodeList: document.getElementById('node-list'),
+      log: document.getElementById('log-container'),
+      alerts: document.getElementById('alert-container'),
+      sysStatus: document.getElementById('sys-status'),
+      simSel: document.getElementById('sim-level')
+    };
+
+    // INIT
+    for(let i=0; i<100; i++) STATE.history.push(98.0 + Math.random());
+
+    els.simSel.addEventListener('change', (e) => {
+      STATE.mode = parseInt(e.target.value);
+      addLog("SYSTEM", `Simulation Mode switched to LEVEL ${STATE.mode}`);
+    });
+
+    // LOGIC
+    function updateSimulation() {
+      if (STATE.mode === 1) return;
+
+      // GCI Logic
+      const volatility = STATE.mode === 3 ? 0.2 : 0.04;
+      let change = (Math.random() - 0.5) * volatility;
+      STATE.gci = Math.max(85, Math.min(100, STATE.gci + change));
+      
+      // Latency Logic
+      if (STATE.gci < 95) STATE.latency += 0.003;
+      else STATE.latency = Math.max(0.01, STATE.latency - 0.003);
+
+      STATE.history.push(STATE.gci);
+      if(STATE.history.length > 150) STATE.history.shift();
+
+      // Text Render
+      els.gci.innerText = STATE.gci.toFixed(2);
+      els.lat.innerText = STATE.latency.toFixed(3) + "s";
+      
+      // Colorize
+      if(STATE.gci > 96) els.gci.className = "metric-big serif text-gold";
+      else if(STATE.gci > 90) els.gci.className = "metric-big serif text-warn";
+      else els.gci.className = "metric-big serif text-alert";
+
+      // System Status
+      const crit = STATE.nodes.some(n => n.status === 'crit');
+      const warn = STATE.nodes.some(n => n.status === 'warn');
+
+      if (crit) {
+        els.sysStatus.innerText = "SYSTEM UNSTABLE";
+        els.sysStatus.className = "status-pill crit";
+      } else if (warn || STATE.gci < 94) {
+        els.sysStatus.innerText = "COHERENCE DRIFT";
+        els.sysStatus.className = "status-pill warn";
+      } else {
+        els.sysStatus.innerText = "SYSTEM NOMINAL";
+        els.sysStatus.className = "status-pill";
+      }
+    }
+
+    // NODES RENDER
+    function renderNodes() {
+      els.nodeList.innerHTML = '';
+      STATE.nodes.forEach(n => {
+        const row = document.createElement('div');
+        row.className = 'node-row';
+        row.innerHTML = `<span>${n.name}</span><span class="node-status ${n.status}"></span>`;
+        els.nodeList.appendChild(row);
+      });
+    }
+
+    // LOGIC: RANDOM EVENTS (ULTRA MODE - INCREASED CHAOS)
+    setInterval(() => {
+      if(STATE.mode !== 3) return;
+
+      // Increased probability for demo purposes
+      if(Math.random() > 0.6) { 
+        const node = STATE.nodes[Math.floor(Math.random() * STATE.nodes.length)];
+        // Higher chance of failure
+        const outcome = Math.random() > 0.7 ? 'warn' : (Math.random() > 0.85 ? 'crit' : 'ok');
+        
+        if(node.status !== outcome) {
+           node.status = outcome;
+           renderNodes();
+           if(outcome === 'crit') {
+             triggerAlert(`${node.name} CRITICAL FAILURE`);
+             addLog("CRIT", `${node.name} offline.`);
+           } else if(outcome === 'warn') {
+             addLog("WARN", `${node.name} destabilized.`);
+           } else {
+             // Only log stabilization if it was broken
+             addLog("SYS", `${node.name} stabilized.`);
+           }
+        }
+      }
+    }, 2000);
+
+    // ALERT SYSTEM
+    function triggerAlert(msg) {
+      els.alerts.innerHTML = `<div class="alert-box active"><strong class="text-alert mono">! ALERT</strong><div class="text-dim" style="margin-top:4px;">${msg}</div></div>`;
+      // Alert stays longer (8s)
+      setTimeout(() => {
+         els.alerts.innerHTML = '<div class="text-dim" style="font-size:0.8rem; padding:0.5rem; font-style:italic;">No active alerts.</div>';
+      }, 8000);
+    }
+    
+    // MANUAL TRIGGER FUNCTION
+    function manualAlertTrigger() {
+      const randomNode = STATE.nodes[Math.floor(Math.random() * STATE.nodes.length)].name;
+      triggerAlert(`MANUAL TEST: ${randomNode} SYNC ERROR`);
+      addLog("TEST", "Manual alert sequence initiated.");
+    }
+
+    // LOGGING SYSTEM
+    const logTags = ["TEL", "POC", "NET", "AI", "GOV", "BIO"];
+    const logMsgs = [
+      "Telemetry packet verified", "Coherence check valid", "Latency nominal", 
+      "Predictive model updated", "Protocol consensus reached", "Biometric sync OK",
+      "Indexing archives...", "Handshake maintained", "Resonance detected"
+    ];
+
+    function addLog(tag, msg) {
+      const now = new Date();
+      const time = now.toISOString().split('T')[1].split('.')[0];
+      
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      
+      let color = 'text-tech';
+      if(tag === 'WARN') color = 'text-warn';
+      if(tag === 'CRIT' || tag === 'ALERT') color = 'text-alert';
+      if(tag === 'SYS' || tag === 'TEST') color = 'text-gold';
+
+      div.innerHTML = `
+        <div class="log-ts">${time}</div>
+        <div class="log-msg"><span class="${color} mono" style="margin-right:6px;">${tag}</span>${msg}</div>
+      `;
+      
+      els.log.prepend(div);
+      
+      if(els.log.children.length > 7) {
+        els.log.removeChild(els.log.lastChild);
+      }
+    }
+
+    function logLoop() {
+      // Faster logs in Ultra
+      const delay = STATE.mode === 3 ? Math.random() * 1200 + 500 : Math.random() * 4000 + 2000;
+      setTimeout(() => {
+        const tag = logTags[Math.floor(Math.random() * logTags.length)];
+        const msg = logMsgs[Math.floor(Math.random() * logMsgs.length)];
+        addLog(tag, msg);
+        logLoop();
+      }, delay);
+    }
+
+    // ANIMATION LOOP
+    function loop() {
+      updateSimulation();
+      drawChart();
+      requestAnimationFrame(loop);
+    }
+
+    // CHART RENDER
+    const canvas = document.getElementById('gci-chart');
+    const ctx = canvas.getContext('2d');
+    
+    function resizeChart() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resizeChart);
+    resizeChart();
+
+    function drawChart() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath(); ctx.moveTo(0, h*0.3); ctx.lineTo(w, h*0.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, h*0.7); ctx.lineTo(w, h*0.7); ctx.stroke();
+
+      ctx.beginPath();
+      const step = w / (STATE.history.length - 1);
+      STATE.history.forEach((val, i) => {
+        const y = h - ((val - 88) / 12) * h; 
+        if(i===0) ctx.moveTo(0, y);
+        else ctx.lineTo(i * step, y);
+      });
+      
+      ctx.strokeStyle = STATE.gci > 95 ? '#D4AF37' : (STATE.gci > 90 ? '#f59e0b' : '#ef4444');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.lineTo(w, h); ctx.lineTo(0, h);
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, STATE.gci > 95 ? 'rgba(212, 175, 55, 0.2)' : 'rgba(245, 158, 11, 0.2)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // RADAR BG
+    const rCanvas = document.getElementById('radar-canvas');
+    const rCtx = rCanvas.getContext('2d');
+    let rW, rH, scanY = 0;
+    function rResize() { rW = rCanvas.width = window.innerWidth; rH = rCanvas.height = window.innerHeight; }
+    window.addEventListener('resize', rResize); rResize();
+
+    function animRadar() {
+      rCtx.clearRect(0, 0, rW, rH);
+      if(STATE.mode > 1) {
+        scanY += 1.5; if(scanY > rH) scanY = 0;
+        rCtx.beginPath(); rCtx.moveTo(0, scanY); rCtx.lineTo(rW, scanY);
+        rCtx.strokeStyle = "rgba(212, 175, 55, 0.15)"; rCtx.lineWidth=1; rCtx.stroke();
+      }
+      requestAnimationFrame(animRadar);
+    }
+
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').innerText = now.toISOString().split('T')[1].split('.')[0];
+    }, 1000);
+
+    renderNodes();
+    logLoop();
+    loop();
+    animRadar();
+
+  </script>
+</body>
+</html>
