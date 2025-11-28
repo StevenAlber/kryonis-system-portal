@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>KRYONIS PORTAL — Live Operations</title>
-  <meta name="description" content="KRYONIS OPERATIONS CONSOLE — Real-time coherence telemetry." />
+  <title>KRYONIS PORTAL — Enhanced Live Operations Dashboard</title>
+  <meta name="description" content="KRYONIS OPERATIONS CONSOLE — Real-time coherence telemetry with advanced visualizations and mini-project integration." />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for improved charting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -338,7 +341,7 @@
       margin-bottom: 1rem;
       display: none;
       border-left: 3px solid var(--alert);
-      animation: flashAlert 0.5s;
+      animation: flashAlert 0.5s infinite alternate;
       font-size: 0.8rem;
     }
 
@@ -381,6 +384,10 @@
       background: rgba(255, 255, 255, 0.015);
     }
 
+    .log-line.flash {
+      animation: flashLog 0.5s;
+    }
+
     .log-ts {
       color: var(--fg-dim);
       font-family: 'JetBrains Mono', monospace;
@@ -396,7 +403,7 @@
     }
 
     /* GCI CHART */
-    #gci-chart {
+    #gci-chart-container {
       width: 100%;
       height: 140px;
       display: block;
@@ -467,6 +474,38 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    /* MINI PROJECT SECTION */
+    .mini-project-panel {
+      margin-top: 2rem;
+      grid-column: 1 / -1;
+    }
+
+    .mini-project-desc {
+      font-size: 0.8rem;
+      color: var(--fg-muted);
+      margin-bottom: 1rem;
+    }
+
+    .mini-project-data {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .data-card {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .data-value {
+      font-size: 1.5rem;
+      color: var(--gold);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
     /* FOOTER */
     footer {
       margin-top: 2rem;
@@ -511,6 +550,11 @@
     @keyframes flashAlert {
       0% { background: rgba(239, 68, 68, 0.4); }
       100% { background: rgba(239, 68, 68, 0.1); }
+    }
+
+    @keyframes flashLog {
+      0% { background: rgba(212, 175, 55, 0.3); }
+      100% { background: transparent; }
     }
 
     /* MOBILE */
@@ -593,7 +637,7 @@
       <div class="top-bar">
         <div class="brand-block">
           <div class="brand-title">KRYONIS PORTAL</div>
-          <div class="brand-sub mono">LIVE OPERATIONS CONSOLE</div>
+          <div class="brand-sub mono">ENHANCED LIVE OPERATIONS CONSOLE</div>
         </div>
 
         <div class="sim-row">
@@ -601,6 +645,7 @@
             <option>SIM: KRYONIS / GBX-01</option>
             <option>SIM: KRYONIS / GBX-02</option>
             <option>SIM: SANDBOX / LOCAL</option>
+            <option>SIM: MINI-PROJECT / DEMO</option>
           </select>
         </div>
 
@@ -616,7 +661,7 @@
     <div class="wrapper">
       <section class="ops-bar">
         <div class="ops-title">
-          AXIS I / COGNITIVE STACK &nbsp; • &nbsp; AXIS II / METABOLIC STACK
+          AXIS I / COGNITIVE STACK &nbsp; • &nbsp; AXIS II / METABOLIC STACK &nbsp; • &nbsp; MINI-PROJECT MONITOR
         </div>
         <div class="ops-coord">
           KRYONIS SYSTEM LAT <span>03.09° N</span> &nbsp;|&nbsp; LON <span>101.71° E</span>
@@ -637,6 +682,7 @@
             <a href="/stack">CAPITAL STACK</a>
             <a href="/simulation">SIMULATION GRID</a>
             <a href="/contact">CONTACT NODE</a>
+            <a href="/mini-project">MINI-PROJECT</a>
           </nav>
         </aside>
 
@@ -656,7 +702,9 @@
 
           <div class="log-feed" data-log-feed></div>
 
-          <canvas id="gci-chart"></canvas>
+          <div id="gci-chart-container">
+            <canvas id="gci-chart"></canvas>
+          </div>
         </section>
 
         <!-- RIGHT: NODES -->
@@ -685,7 +733,7 @@
                 <div class="node-metrics">load 71% • queue 12</div>
               </div>
             </div>
-            <div class="node-metrics text-warn">WARM</div>
+            <div class="node-metrics text-warn">WARN</div>
           </div>
 
           <div class="node-row">
@@ -731,11 +779,47 @@
             </div>
             <div class="node-metrics text-dim">IDLE</div>
           </div>
+
+          <div class="node-row">
+            <div class="node-main">
+              <div class="node-status ok" data-node-status></div>
+              <div>
+                <div class="node-label">MINI-PROJECT NODE</div>
+                <div class="node-metrics">progress 85% • tasks 42/50</div>
+              </div>
+            </div>
+            <div class="node-metrics text-ok">ACTIVE</div>
+          </div>
         </aside>
+
+        <!-- MINI-PROJECT PANEL -->
+        <section class="panel mini-project-panel">
+          <div class="panel-header">
+            <div class="p-title">MINI-PROJECT OVERVIEW</div>
+            <div class="p-sub">/demo /metrics /progress</div>
+          </div>
+          <div class="mini-project-desc">
+            This mini-project simulates a real-time AI operations dashboard for monitoring coherence in a fictional "KRYONIS" system. It demonstrates dynamic updates, visualizations, and status tracking for educational purposes.
+          </div>
+          <div class="mini-project-data">
+            <div class="data-card">
+              <div class="p-sub">Tasks Completed</div>
+              <div class="data-value" data-mini-tasks>42</div>
+            </div>
+            <div class="data-card">
+              <div class="p-sub">System Uptime</div>
+              <div class="data-value" data-mini-uptime>99.8%</div>
+            </div>
+            <div class="data-card">
+              <div class="p-sub">Alert Count</div>
+              <div class="data-value" data-mini-alerts>3</div>
+            </div>
+          </div>
+        </section>
       </section>
 
       <footer>
-        <div>© KRYONIS GLOBAL — Live Coherence Telemetry Stack</div>
+        <div>© KRYONIS GLOBAL — Enhanced Live Coherence Telemetry Stack with Mini-Project Integration</div>
         <div>Return to <a href="/">KRYONIS.GLOBAL main axis</a></div>
       </footer>
     </div>
@@ -785,7 +869,7 @@
       setInterval(updateClock, 1000);
     })();
 
-    // LOG FEED
+    // LOG FEED with enhanced flashing
     (function () {
       const feed = document.querySelector('[data-log-feed]');
       if (!feed) return;
@@ -800,18 +884,21 @@
         '[SIM] Synthetic shock scenario propagated through GBX-01.',
         '[PX-Δ1] Cognitive anomaly flagged and resolved by local operator.',
         '[BIO-OS] Soil micro-biome metrics within green corridor.',
-        '[SEC] No abnormal access signatures on KRYONIS portal in last hour.'
+        '[SEC] No abnormal access signatures on KRYONIS portal in last hour.',
+        '[MINI-PROJECT] Task completed: Data visualization enhanced.',
+        '[MINI-PROJECT] Alert: Simulated error in demo mode.'
       ];
 
       const alertBox = document.querySelector('[data-alert-box]');
       let i = 0;
 
-      function pushLine() {
+      function pushLine(flash = false) {
         const msg = samples[i % samples.length];
         i++;
 
         const line = document.createElement('div');
         line.className = 'log-line';
+        if (flash) line.classList.add('flash');
 
         const ts = document.createElement('div');
         ts.className = 'log-ts';
@@ -831,11 +918,11 @@
           feed.removeChild(children[0]);
         }
 
-        // occasionally show alert
+        // occasionally show alert with more frequency
         if (alertBox) {
-          if (i % 9 === 0) {
+          if (i % 7 === 0) {
             alertBox.classList.add('active');
-          } else if (i % 11 === 0) {
+          } else if (i % 9 === 0) {
             alertBox.classList.remove('active');
           }
         }
@@ -843,83 +930,54 @@
 
       // seed
       for (let k = 0; k < 8; k++) pushLine();
-      setInterval(pushLine, 3500);
+      setInterval(() => pushLine(Math.random() > 0.7), 2500); // faster updates, random flash
     })();
 
-    // GCI CHART
+    // GCI CHART with Chart.js for better visualization and real-time updates
     (function () {
-      const canvas = document.getElementById('gci-chart');
-      if (!canvas || !canvas.getContext) return;
-      const ctx = canvas.getContext('2d');
+      const ctx = document.getElementById('gci-chart').getContext('2d');
+      const dataPoints = Array(48).fill(0).map(() => Math.random() * 0.2 + 0.5); // initial data
 
-      function resize() {
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-      }
-
-      function draw() {
-        const w = canvas.clientWidth;
-        const h = canvas.clientHeight;
-        ctx.clearRect(0, 0, w, h);
-
-        // grid
-        ctx.globalAlpha = 0.25;
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
-        ctx.lineWidth = 1;
-        const steps = 4;
-        for (let i = 1; i < steps; i++) {
-          const y = (h / steps) * i;
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-          ctx.stroke();
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array(48).fill(''),
+          datasets: [{
+            label: 'GCI Index',
+            data: dataPoints,
+            borderColor: '#D4AF37',
+            backgroundColor: 'rgba(212, 175, 55, 0.2)',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { display: false },
+            y: { display: false, min: 0, max: 1 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          },
+          animation: { duration: 0 }
         }
+      });
 
-        // axis label
-        ctx.globalAlpha = 0.8;
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillText('GCI INDEX (SIMULATED)', 10, 14);
-
-        // line
-        ctx.beginPath();
-        const pointCount = 48;
-        let xStep = w / (pointCount - 1);
-        let base = h * 0.55;
-        let amp = h * 0.18;
-        for (let i = 0; i < pointCount; i++) {
-          const x = i * xStep;
-          const noise = Math.sin((Date.now() / 2400) + i * 0.35) * amp * 0.4;
-          const jitter = (Math.random() - 0.5) * amp * 0.1;
-          const y = base + noise + jitter;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = '#D4AF37';
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 1;
-        ctx.stroke();
-
-        // glow
-        ctx.globalAlpha = 0.15;
-        ctx.lineWidth = 6;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+      function updateChart() {
+        dataPoints.shift();
+        dataPoints.push(Math.random() * 0.2 + 0.5 + Math.sin(Date.now() / 1000) * 0.1);
+        chart.data.datasets[0].data = dataPoints;
+        chart.update();
       }
 
-      function render() {
-        resize();
-        draw();
-      }
-
-      render();
-      window.addEventListener('resize', render);
-      setInterval(draw, 900);
+      setInterval(updateChart, 1000); // real-time updates every second
     })();
 
-    // RADAR BACKGROUND
+    // RADAR BACKGROUND with enhanced flashing
     (function () {
       const canvas = document.getElementById('radar-canvas');
       if (!canvas || !canvas.getContext) return;
@@ -949,16 +1007,16 @@
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, w, h);
 
-        // concentric circles
+        // concentric circles with subtle pulse
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.18)';
         ctx.lineWidth = 1;
         for (let i = 0.2; i <= 1.0; i += 0.2) {
           ctx.beginPath();
-          ctx.arc(cx, cy, r * i * 0.5, 0, Math.PI * 2);
+          ctx.arc(cx, cy, r * i * 0.5 * (1 + Math.sin(Date.now() / 2000) * 0.05), 0, Math.PI * 2);
           ctx.stroke();
         }
 
-        // sweep
+        // sweep with flash
         const sweepAngle = angle;
         const sweepLen = r * 0.85;
         const x2 = cx + Math.cos(sweepAngle) * sweepLen;
@@ -967,14 +1025,14 @@
         grad.addColorStop(0, 'rgba(212, 175, 55, 0.5)');
         grad.addColorStop(1, 'rgba(212, 175, 55, 0)');
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 + Math.abs(Math.sin(Date.now() / 500)) * 2; // flashing width
 
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        angle += 0.01;
+        angle += 0.02; // faster rotation
       }
 
       function loop() {
@@ -987,7 +1045,7 @@
       window.addEventListener('resize', resize);
     })();
 
-    // NODE STATUS DRIFT
+    // NODE STATUS DRIFT with more frequent updates
     (function () {
       const nodes = document.querySelectorAll('[data-node-status]');
       if (!nodes.length) return;
@@ -997,18 +1055,41 @@
           node.classList.remove('ok', 'warn', 'crit');
 
           const roll = Math.random();
-          if (idx === 0) {
-            node.classList.add('ok'); // PX-Δ1 steady
+          if (idx === 0 || idx === nodes.length - 1) { // Steady for PX-Δ1 and Mini-Project
+            node.classList.add('ok');
             return;
           }
-          if (roll < 0.65) node.classList.add('ok');
-          else if (roll < 0.92) node.classList.add('warn');
+          if (roll < 0.6) node.classList.add('ok');
+          else if (roll < 0.85) node.classList.add('warn');
           else node.classList.add('crit');
         });
       }
 
       randomUpdate();
-      setInterval(randomUpdate, 8000);
+      setInterval(randomUpdate, 5000); // more frequent
+    })();
+
+    // MINI-PROJECT DATA UPDATES
+    (function () {
+      const tasksEl = document.querySelector('[data-mini-tasks]');
+      const uptimeEl = document.querySelector('[data-mini-uptime]');
+      const alertsEl = document.querySelector('[data-mini-alerts]');
+
+      let tasks = 42;
+      let uptime = 99.8;
+      let alerts = 3;
+
+      function updateMiniData() {
+        if (Math.random() > 0.8) tasks = Math.min(50, tasks + 1);
+        uptime = 99 + Math.random() * 1;
+        if (Math.random() > 0.9) alerts += 1;
+
+        if (tasksEl) tasksEl.textContent = tasks;
+        if (uptimeEl) uptimeEl.textContent = uptime.toFixed(1) + '%';
+        if (alertsEl) alertsEl.textContent = alerts;
+      }
+
+      setInterval(updateMiniData, 3000);
     })();
   </script>
 </body>
